@@ -227,7 +227,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun setImmersive(on: Boolean) {
+    private fun applyImmersive(on: Boolean) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val c = window.insetsController ?: return
             if (on) {
@@ -249,7 +249,7 @@ class MainActivity : AppCompatActivity() {
         val lp = window.attributes
         lp.screenBrightness = 0.01f
         window.attributes = lp
-        setImmersive(true)
+        applyImmersive(true)
         sleepLayer.visibility = View.VISIBLE
         moonBtn.visibility = View.GONE
         ui.removeCallbacks(sleepTick)
@@ -262,7 +262,7 @@ class MainActivity : AppCompatActivity() {
         val lp = window.attributes
         lp.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
         window.attributes = lp
-        setImmersive(false)
+        applyImmersive(false)
         sleepLayer.visibility = View.GONE
         moonBtn.visibility = View.VISIBLE
         ui.removeCallbacks(sleepTick)
