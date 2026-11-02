@@ -2,6 +2,9 @@ package vn.jxauto.volamidle
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.app.PictureInPictureParams
+import android.content.res.Configuration
+import android.util.Rational
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
@@ -171,6 +174,32 @@ class MainActivity : AppCompatActivity() {
         ui.removeCallbacksAndMessages(null)
         web.destroy()
         super.onDestroy()
+    }
+
+    /* ---------- Thu nhỏ nổi (Picture-in-Picture) ---------- */
+    // Tự vào PiP khi người dùng nhấn Home hoặc chuyển sang app khác → game chạy tiếp trong ô nổi.
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        enterPip()
+    }
+
+    private fun enterPip() {
+        if (sleeping) return
+        if (isInPictureInPictureMode) return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        try {
+            val w = (web.width.takeIf { it > 0 } ?: 9)
+            val h = (web.height.takeIf { it > 0 } ?: 16)
+            val ratio = Rational(w.coerceIn(1, 1000), h.coerceIn(1, 2390))
+            val params = PictureInPictureParams.Builder().setAspectRatio(ratio).build()
+            enterPictureInPictureMode(params)
+        } catch (_: Exception) {}
+    }
+
+    // Trong PiP thì ẩn nút ☾ và lớp nghỉ màn cho gọn; thoát PiP thì hiện lại
+    override fun onPictureInPictureModeChanged(inPip: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(inPip, newConfig)
+        moonBtn.visibility = if (inPip || sleeping) View.GONE else View.VISIBLE
     }
 
     /* ================= Nghỉ màn ================= */
