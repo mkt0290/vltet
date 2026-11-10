@@ -92,6 +92,7 @@ class MainActivity : AppCompatActivity() {
         web = WebView(this)
         root.addView(web, FrameLayout.LayoutParams(-1, -1))
         buildMoonButton()
+        buildZoomButton()
         buildSleepLayer()
         setContentView(root)
 
@@ -111,6 +112,10 @@ class MainActivity : AppCompatActivity() {
             allowFileAccess = false
             allowContentAccess = true
         }
+        // Mức thu/phóng mặc định (%) — lưu trong SharedPreferences, mặc định 60% (game nhỏ lại, nhìn rộng hơn)
+        val zoomPct = getSharedPreferences("app", MODE_PRIVATE).getInt("zoomPct", 60)
+        web.setInitialScale(zoomPct)   // đặt tỉ lệ ban đầu; người dùng vẫn chụm 2 ngón để chỉnh
+
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true)
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
@@ -134,7 +139,7 @@ class MainActivity : AppCompatActivity() {
                 view.evaluateJavascript(
                     "(function(){try{var m=document.querySelector('meta[name=viewport]');" +
                     "if(!m){m=document.createElement('meta');m.name='viewport';document.head.appendChild(m);}" +
-                    "m.setAttribute('content','width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, user-scalable=yes');}catch(e){}})();",
+                    "m.setAttribute('content','width=device-width, minimum-scale=0.3, maximum-scale=5, user-scalable=yes');}catch(e){}})();",
                     null
                 )
                 injectJX()
@@ -227,6 +232,47 @@ class MainActivity : AppCompatActivity() {
         val lp = FrameLayout.LayoutParams(dp(34), dp(34), Gravity.BOTTOM or Gravity.START)
         lp.setMargins(dp(6), 0, 0, dp(70))
         root.addView(moonBtn, lp)
+    }
+
+    private fun applyZoom(pct: Int) {
+        val p = pct.coerceIn(30, 300)
+        getSharedPreferences("app", MODE_PRIVATE).edit().putInt("zoomPct", p).apply()
+        try { web.setInitialScale(p) } catch (_: Exception) {}
+        // áp ngay bằng cách đổi viewport initial-scale (không cần tải lại)
+        val scale = p / 100.0
+        web.evaluateJavascript(
+            "(function(){try{var m=document.querySelector('meta[name=viewport]');" +
+            "if(!m){m=document.createElement('meta');m.name='viewport';document.head.appendChild(m);}" +
+            "m.setAttribute('content','width=device-width, initial-scale=$scale, minimum-scale=0.3, maximum-scale=5, user-scalable=yes');}catch(e){}})();",
+            null
+        )
+    }
+
+    private fun buildZoomButton() {
+        val zoomBtn = TextView(this).apply {
+            text = "\uD83D\uDD0D"   // 🔍
+            textSize = 16f
+            setTextColor(Color.parseColor("#F6E7D8"))
+            gravity = Gravity.CENTER
+            alpha = 0.45f
+            setBackgroundColor(Color.parseColor("#AA0D1512"))
+            setOnClickListener {
+                val opts = arrayOf("50%", "60%", "75%", "90%", "100%", "125%", "150%")
+                val vals = intArrayOf(50, 60, 75, 90, 100, 125, 150)
+                val cur = getSharedPreferences("app", MODE_PRIVATE).getInt("zoomPct", 60)
+                var sel = vals.indexOf(cur); if (sel < 0) sel = 1
+                android.app.AlertDialog.Builder(this@MainActivity)
+                    .setTitle("Mức thu/phóng game")
+                    .setSingleChoiceItems(opts, sel) { d, which ->
+                        applyZoom(vals[which]); d.dismiss()
+                    }
+                    .setNegativeButton("Đóng", null)
+                    .show()
+            }
+        }
+        val lp = FrameLayout.LayoutParams(dp(34), dp(34), Gravity.BOTTOM or Gravity.START)
+        lp.setMargins(dp(6), 0, 0, dp(108))   // trên nút moon
+        root.addView(zoomBtn, lp)
     }
 
     @SuppressLint("ClickableViewAccessibility")
