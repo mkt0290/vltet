@@ -104,9 +104,10 @@ class MainActivity : AppCompatActivity() {
             cacheMode = WebSettings.LOAD_DEFAULT
             loadWithOverviewMode = true
             useWideViewPort = true
-            setSupportZoom(false)
-            builtInZoomControls = false
-            displayZoomControls = false
+            // Cho phép phóng to bằng 2 ngón (pinch-zoom)
+            setSupportZoom(true)
+            builtInZoomControls = true
+            displayZoomControls = false   // ẩn nút +/- nổi, chỉ dùng chụm ngón
             allowFileAccess = false
             allowContentAccess = true
         }
@@ -129,6 +130,13 @@ class MainActivity : AppCompatActivity() {
             }
             override fun onPageFinished(view: WebView, url: String?) {
                 super.onPageFinished(view, url)
+                // Gỡ khóa zoom của trang (game đặt user-scalable=no) để chụm 2 ngón phóng to được
+                view.evaluateJavascript(
+                    "(function(){try{var m=document.querySelector('meta[name=viewport]');" +
+                    "if(!m){m=document.createElement('meta');m.name='viewport';document.head.appendChild(m);}" +
+                    "m.setAttribute('content','width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=5, user-scalable=yes');}catch(e){}})();",
+                    null
+                )
                 injectJX()
             }
         }
